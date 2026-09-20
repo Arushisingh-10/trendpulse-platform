@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Search, Rocket, Flame, LineChart, Users, Bookmark, MonitorSmartphone, ArrowRight } from "lucide-react";
 import Sparkline from "@/components/Sparkline";
 import TrendCard from "@/components/TrendCard";
-import { trends, popularSearches, fmtGrowth } from "@/lib/data";
+import { popularSearches, fmtGrowth } from "@/lib/data";
+import { getAllTrends } from "@/lib/trends";
 
 const features = [
   { icon: Flame, color: "bg-rose-50 text-rose-500", title: "Real-Time Trend Discovery", text: "Find what's trending, rising or declining across multiple categories." },
@@ -12,7 +13,8 @@ const features = [
   { icon: MonitorSmartphone, color: "bg-sky-50 text-sky-600", title: "Mobile Responsive", text: "Access insights anytime, anywhere, on any device." },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const trends = await getAllTrends();
   const top = [...trends].sort((a, b) => b.growth - a.growth).slice(0, 5);
 
   return (

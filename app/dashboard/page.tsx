@@ -3,7 +3,7 @@ import { Bookmark, Eye, Flame, Activity } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 import TrendCard from "@/components/TrendCard";
-import { trends } from "@/lib/data";
+import { getAllTrends } from "@/lib/trends";
 
 export const metadata = { title: "Dashboard | TrendPulse" };
 
@@ -11,6 +11,8 @@ export default async function Dashboard() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   if (!data.user) redirect("/login");
+
+  const trends = await getAllTrends();
 
   const name = data.user.user_metadata?.full_name ?? data.user.email;
 

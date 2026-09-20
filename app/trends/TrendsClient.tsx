@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search, SearchX } from "lucide-react";
 import TrendCard from "@/components/TrendCard";
-import { trends, categories } from "@/lib/data";
+import { categories, type Trend } from "@/lib/data";
 
 const sorts = [
   { value: "growth", label: "Growth" },
@@ -12,7 +12,7 @@ const sorts = [
   { value: "name", label: "Name (A-Z)" },
 ];
 
-export default function TrendsClient() {
+export default function TrendsClient({ trends }: { trends: Trend[] }) {
   const params = useSearchParams();
   const [q, setQ] = useState(params.get("q") ?? "");
   const [category, setCategory] = useState("All");
@@ -34,7 +34,7 @@ export default function TrendsClient() {
       if (sort === "score") return b.score - a.score;
       return b.growth - a.growth;
     });
-  }, [q, category, sort]);
+  }, [q, category, sort, trends]);
 
   return (
     <>
