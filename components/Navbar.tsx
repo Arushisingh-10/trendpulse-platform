@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Activity, Menu, X, Search } from "lucide-react";
+import type { User } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
 
 const links = [
   { href: "/", label: "Home" },
@@ -15,8 +17,24 @@ const links = [
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
   const active = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => setUser(session?.user ?? null));
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  async function logout() {
+    await createClient().auth.signOut();
+    setOpen(false);
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200/70 bg-white/80 backdrop-blur-xl">
@@ -48,12 +66,25 @@ export default function Navbar() {
           <Link href="/trends" aria-label="Search" className="rounded-full p-2 text-gray-600 hover:bg-gray-100">
             <Search size={20} />
           </Link>
-          <Link href="/login" className="rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50">
-            Log in
-          </Link>
-          <Link href="/signup" className="rounded-xl bg-indigo-600 px-5 py-2 text-sm font-medium text-white shadow-sm shadow-indigo-200 hover:bg-indigo-700">
-            Sign Up
-          </Link>
+          {user ? (
+            <>
+              <Link href="/dashboard" className="rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50">
+                Dashboard
+              </Link>
+              <button onClick={logout} className="rounded-xl bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+                Log out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50">
+                Log in
+              </Link>
+              <Link href="/signup" className="rounded-xl bg-indigo-600 px-5 py-2 text-sm font-medium text-white shadow-sm shadow-indigo-200 hover:bg-indigo-700">
+                Sign Up
+              </Link>
+            </>
+          )}
         </div>
 
         <button onClick={() => setOpen(!open)} className="rounded-lg p-2 text-gray-700 lg:hidden" aria-label="Toggle menu">
@@ -76,8 +107,17 @@ export default function Navbar() {
             </Link>
           ))}
           <div className="grid grid-cols-2 gap-2 pt-2">
-            <Link href="/login" onClick={() => setOpen(false)} className="rounded-xl border border-gray-300 px-3 py-2.5 text-center text-sm font-medium">Log in</Link>
-            <Link href="/signup" onClick={() => setOpen(false)} className="rounded-xl bg-indigo-600 px-3 py-2.5 text-center text-sm font-medium text-white">Sign Up</Link>
+            {user ? (
+              <>
+                <Link href="/dashboard" onClick={() => setOpen(false)} className="rounded-xl border border-gray-300 px-3 py-2.5 text-center text-sm font-medium">Dashboard</Link>
+                <button onClick={logout} className="rounded-xl bg-indigo-600 px-3 py-2.5 text-sm font-medium text-white">Log out</button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" onClick={() => setOpen(false)} className="rounded-xl border border-gray-300 px-3 py-2.5 text-center text-sm font-medium">Log in</Link>
+                <Link href="/signup" onClick={() => setOpen(false)} className="rounded-xl bg-indigo-600 px-3 py-2.5 text-center text-sm font-medium text-white">Sign Up</Link>
+              </>
+            )}
           </div>
         </div>
       )}
