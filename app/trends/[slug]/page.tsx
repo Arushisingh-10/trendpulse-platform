@@ -1,15 +1,30 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Bookmark, Database, Clock } from "lucide-react";
+import { ArrowLeft, Database, Clock } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import TrendChart from "@/components/TrendChart";
 import { fmtGrowth } from "@/lib/data";
 import { getTrendBySlug } from "@/lib/trends";
+import SaveButton from "@/components/SaveButton";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function TrendDetail({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const t = await getTrendBySlug(slug);
   if (!t) notFound();
+
+
+  const supabase = await createClient();
+const { data: auth } = await supabase.auth.getUser();
+let saved = false;
+if (auth.user) {
+  const { data: row } = await supabase
+    .from("saved_trends").select("id").eq("trend_id", t.id).eq("user_id", auth.user.id).maybeSingle();
+  saved = !!row;
+
+  // Recently viewed record karo
+  await supabase.from("recent_views").insert({ user_id: auth.user.id, trend_id: t.id });
+}
 
   const down = t.growth < 0;
   const color = down ? "text-red-500" : "text-emerald-600";
@@ -38,12 +53,7 @@ export default async function TrendDetail({ params }: { params: Promise<{ slug: 
           </div>
           <p className="mt-2 max-w-xl text-gray-600">{t.description}</p>
         </div>
-        <Link
-          href="/login"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
-        >
-          <Bookmark size={16} /> Save Trend
-        </Link>
+        <SaveButton trendId={t.id} initialSaved={saved} loggedIn={!!auth.user} />
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">

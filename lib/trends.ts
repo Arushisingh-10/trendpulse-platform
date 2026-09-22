@@ -3,6 +3,7 @@ import type { Trend } from "./data";
 import { computeVelocity, trendScore } from "./velocity";
 
 export type LiveTrend = Trend & {
+  id: string;
   description: string;
   related: string[];
   keywords: string[];
@@ -33,6 +34,7 @@ async function build(supabase: Client, row: Row): Promise<LiveTrend> {
   const v = computeVelocity(views);
 
   return {
+    id: row.id,
     slug: row.slug,
     name: row.name,
     icon: row.icon ?? "bot",
